@@ -1,62 +1,60 @@
-# Lean, But Not Proven
+# P = NP in Lean (Not Really)
 
-**A cautionary tale about formal verification and mathematical claims.**
+**Three formal "proofs" that type-check but prove nothing.**
 
-## The Thesis
+## Overview
 
-When you see "they proved P = NP in Lean," remember this: **Lean verifies that your formal statement follows from your definitions and axioms.** It does *not* certify that you encoded the actual P vs NP problem correctly.
+This repository demonstrates three ways to write Lean code that appears to prove P = NP, type-checks successfully, and yet proves nothing about the actual complexity classes P and NP.
 
-This repository contains three tiny, self-contained examples that all claim to prove P = NP. Each one type-checks perfectly in Lean 4. None of them prove anything about the actual complexity classes P and NP.
+The point: **a formal proof is only as meaningful as its definitions and axioms.** Lean verifies that your conclusions follow from your premises—it cannot verify that your premises capture the real mathematical problem.
 
-## The Examples: Three Ways to "Prove" P = NP
+## The Three Examples
 
 ### 1. [Definitional Smuggling](LeanButNotProve/DefinitionalSmuggling.lean)
 
-**The Trick:** Define a proposition *named* `PEqualsNP` as simply `True`, then prove it trivially.
+We define complexity classes `ComplexityClassP` and `ComplexityClassNP` with proper-looking structure (decision problems, time bounds, solvability predicates), but use the *same* `solvableInTime` predicate for both classes.
 
-**What Lean Checks:** That `trivial` is a valid proof of our definition of `PEqualsNP` ✓
+**The Cheat:** The definitions don't distinguish between deterministic and nondeterministic computation. By construction, P and NP are the same type, so `P = NP` follows by reflexivity.
 
-**What Lean Doesn't Check:** Whether our definition encodes the actual complexity classes ✗
-
-**Moral:** The statement is wrong, not the prover. Names don't carry mathematical meaning.
+**What's Missing:** A computational model that separates deterministic from nondeterministic time complexity. The real P vs NP question is precisely about whether this distinction matters.
 
 ---
 
 ### 2. [Vacuous Proof](LeanButNotProve/VacuousProof.lean)
 
-**The Trick:** Define "computational problems" as an empty type, then prove P = NP over it.
+We set up alphabets, Turing machines, polynomial time bounds, and verifiers—all the right vocabulary. Then we define `ProblemInstance` as `Fin 0`, an empty type.
 
-**What Lean Checks:** That we correctly proved ∀ prob, (prob ∈ P ↔ prob ∈ NP) for our encoding ✓
+**The Cheat:** When there are zero problem instances, any universal statement about "all problems" becomes vacuously true. P = NP holds because there are no problems to compare.
 
-**What Lean Doesn't Check:** That our encoding contains any actual problems to compare ✗
-
-**Moral:** "All dragons are blue" is vacuously true when there are no dragons. P = NP is vacuously true when there are no problems.
+**What's Missing:** Actual problems. SAT, CLIQUE, HAMPATH, and the thousands of problems that make the P vs NP question meaningful simply don't exist in this encoding.
 
 ---
 
-### 3. [Axiom Laundering](LeanButNotProve/AxiomLaundering.lean)
+### 3. [Circular Reasoning](LeanButNotProve/AxiomLaundering.lean)
 
-**The Trick:** Declare "P = NP" as an axiom, then "prove" a theorem by citing that axiom.
+We set up Turing machines, polynomial-time reductions, and prove P = NP through what looks like a structured multi-step argument. The proof uses a lemma about a "universal problem" that all NP problems reduce to.
 
-**What Lean Checks:** That our theorem follows from our axioms ✓
+**The Cheat:** The lemma `np_reduces_to_universal_in_p` claims there exists a problem U that is in both P and NP, with all NP problems reducing to it. But asserting U is in P (without proving it) is equivalent to assuming P = NP. The circular assumption is hidden in a helper lemma.
 
-**What Lean Doesn't Check:** Whether our axioms are justified ✗
-
-**Moral:** Assuming the answer is not the same as proving it.
+**What's Missing:** An actual proof that an NP-complete problem is in P. The lemma simply asserts this, making the entire argument circular. The multi-step structure masks the fact that we assumed the conclusion.
 
 ---
 
 ## Why This Matters
 
-Formal verification is powerful and valuable. Projects like Mathlib formalize real mathematics with impressive rigor. But formalization is only as good as the encoding.
+Formal verification has revolutionized parts of mathematics and computer science. When used carefully, tools like Lean provide unprecedented rigor. But formalization requires:
 
-When someone claims "P = NP was proved in Lean" (or any major result):
-1. ✅ Ask: "What exactly was the formal statement?"
-2. ✅ Check: Do the definitions faithfully encode the complexity classes?
-3. ✅ Verify: Were any suspicious axioms introduced?
-4. ✅ Look: Does the proof work by construction, or is something defined away?
+1. **Faithful encoding** of the informal problem
+2. **Justified axioms** that don't assume the conclusion
+3. **Non-vacuous domains** with actual instances to reason about
 
-This repo is pedagogical satire—toy examples to illustrate pitfalls, not an attack on Lean or formal mathematics. The real P vs NP problem remains wide open, and no amount of definitional trickery changes that.
+When you encounter claims like "X was proved in Lean":
+- Read the formal statement
+- Check the definitions against the informal problem
+- Verify no axioms smuggle in the conclusion
+- Confirm the domain is non-empty when it needs to be
+
+This repository is for education, not critique. Lean is an excellent tool. The P vs NP problem remains open. These examples simply illustrate that type-checking ≠ mathematical truth.
 
 ## How to Build
 
@@ -82,22 +80,21 @@ p-eq-np-in-lean-not-really/
 └── LeanButNotProve/
     ├── DefinitionalSmuggling.lean              # P = NP via bad definition
     ├── VacuousProof.lean                       # P = NP via empty domain
-    └── AxiomLaundering.lean                    # P = NP via axiom
+    └── AxiomLaundering.lean                    # P = NP via circular reasoning
 ```
 
-## A Note on Tone
+## Learn More
 
-This repository is meant to be educational and constructive. Formal verification is a remarkable achievement, and Lean is an excellent tool. The goal here is to help people understand what "proved in Lean" actually means—and what it doesn't mean.
+Interested in serious formal verification?
 
-If you're interested in *real* formalized mathematics, check out:
-- [Mathlib](https://github.com/leanprover-community/mathlib4) – Lean's mathematics library
-- [Lean 4 Documentation](https://lean-lang.org/)
-- The [Liquid Tensor Experiment](https://leanprover-community.github.io/liquid/) – a serious formalization project
+- [Mathlib](https://github.com/leanprover-community/mathlib4) – Lean's mathematics library with thousands of properly formalized theorems
+- [Lean 4 Documentation](https://lean-lang.org/) – Language reference and tutorials
+- [Liquid Tensor Experiment](https://leanprover-community.github.io/liquid/) – Major formalization project that correctly encoded and proved a deep result
+
+For complexity theory background:
+- Arora & Barak, *Computational Complexity: A Modern Approach*
+- [The P versus NP problem](https://www.claymath.org/millennium/p-vs-np/) (Clay Math Institute)
 
 ## License
 
-This repository is released into the public domain (CC0). Use it however you like.
-
----
-
-*"The map is not the territory, and the formalization is not the mathematics."*
+Released into the public domain (CC0). Use freely.

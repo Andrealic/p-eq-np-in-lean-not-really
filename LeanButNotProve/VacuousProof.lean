@@ -1,50 +1,69 @@
 /-
-# Vacuous Proof: The "P = NP" Proof (Empty Domain Version)
+Vacuous Proof: P = NP via empty problem domain
 
-This file demonstrates how you can "prove" P = NP by defining the domain
-of computational problems as empty, making the equality vacuously true.
-
-A statement like "all dragons are blue" is vacuously true if there are no dragons.
-Similarly, "P = NP" becomes vacuous if there are no problems to compare.
+This file sets up proper-looking complexity theory structures but instantiates
+the problem space as empty, making all universal claims vacuously true.
 -/
 
--- We'll define what we claim is the type of "computational problems".
--- But we define it as an empty type!
-def ComputationalProblem : Type := Empty
+-- A tape alphabet for Turing machines
+structure Alphabet where
+  symbols : Type
+  blank : symbols
 
--- Now we define predicates for membership in P and NP.
--- These can never actually be called since ComputationalProblem is empty.
-def inP (prob : ComputationalProblem) : Prop :=
-  -- Can't check if prob is in P because prob doesn't exist
-  True
+-- A decision problem over a given alphabet
+structure Problem (α : Alphabet) where
+  input : List α.symbols → Bool
 
-def inNP (prob : ComputationalProblem) : Prop :=
-  -- Can't check if prob is in NP because prob doesn't exist
-  True
+-- Polynomial time decidability
+def polynomialTimeDecidable {α : Alphabet} (p : Problem α) : Prop :=
+  ∃ (k : Nat) (decider : List α.symbols → Nat → Bool),
+    ∀ (input : List α.symbols), 
+      decider input (input.length ^ k) = p.input input
 
--- Define "P = NP" as: every problem is in P iff it's in NP
-def PEqualsNP_Vacuous : Prop :=
-  ∀ (prob : ComputationalProblem), inP prob ↔ inNP prob
+-- Nondeterministic polynomial time verification
+def nondeterministicPolyTime {α : Alphabet} (p : Problem α) : Prop :=
+  ∃ (k : Nat) (verifier : List α.symbols → List α.symbols → Nat → Bool),
+    ∀ (input : List α.symbols),
+      p.input input = true ↔ 
+        ∃ (certificate : List α.symbols),
+          verifier input certificate (input.length ^ k) = true
 
--- And now the "proof"
-theorem p_equals_np_vacuous : PEqualsNP_Vacuous := by
-  -- We need to prove: ∀ prob, inP prob ↔ inNP prob
-  intro prob
-  -- But prob has type Empty (by definition of ComputationalProblem)
-  -- From a value of type Empty, we can prove anything!
-  exact Empty.elim prob
+-- Here's the cheat: we define a ProblemInstance as indexed by Fin 0,
+-- which means there are ZERO actual problem instances.
+-- Everything that follows will quantify over "all problem instances"
+-- but since there are none, all statements become vacuously true.
+def ProblemInstance : Type := Fin 0
+
+-- Map each "problem instance" to a concrete problem.
+-- This function can never actually be called since ProblemInstance is empty.
+def problemEncoding (inst : ProblemInstance) : Σ (α : Alphabet), Problem α :=
+  Fin.elim0 inst
+
+-- P is the set of all problem instances with polynomial time algorithms
+def ClassP : Set ProblemInstance :=
+  { inst | let ⟨α, prob⟩ := problemEncoding inst; polynomialTimeDecidable prob }
+
+-- NP is the set of all problem instances with polynomial time verifiers
+def ClassNP : Set ProblemInstance :=
+  { inst | let ⟨α, prob⟩ := problemEncoding inst; nondeterministicPolyTime prob }
+
+-- Main theorem: P = NP
+theorem p_equals_np : ClassP = ClassNP := by
+  -- We need to show the two sets are equal
+  ext inst
+  -- But inst : ProblemInstance = Fin 0, which is uninhabited
+  exact Fin.elim0 inst
 
 /-
-What went wrong?
-- We defined ComputationalProblem as Empty, so there are no problems to compare
-- The universal quantifier ∀ over an empty domain is vacuously true
-- Lean correctly verified our proof of our (vacuous) statement
-- We never encoded SAT, traveling salesman, or any actual problems
+The cheat:
+- We defined ProblemInstance as Fin 0, an empty type
+- All problems are indexed by ProblemInstance
+- The universal quantifier over an empty domain is vacuously satisfied
+- SAT, traveling salesman, and all actual NP-complete problems don't exist in this encoding
 
-The cheat: We encoded P = NP over an empty universe, making it meaningless.
-
-Moral: A statement being "provable" depends entirely on the encoding.
-If you encode a problem badly enough, it can become trivial.
+Real formalization would need:
+- A non-empty collection of actual computational problems
+- Concrete encodings of problems like SAT, CLIQUE, HAMPATH
+- Proof that these problems are in NP
+- Then attempt to show they are in P (which would be the actual hard part)
 -/
-
-#check p_equals_np_vacuous  -- p_equals_np_vacuous : ∀ (prob : Empty), True ↔ True
