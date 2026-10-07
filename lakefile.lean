@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-package «lean-but-not-prove» where
+package «p-eq-np-in-lean-not-really» where
   version := v!"0.1.0"
 
 @[default_target]

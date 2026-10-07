@@ -75,7 +75,7 @@ All three examples type-check cleanly. They're supposed to—that's the point.
 ## Repository Structure
 
 ```
-lean-but-not-prove/
+p-eq-np-in-lean-not-really/
 ├── README.md                                    # You are here
 ├── lean-toolchain                               # Lean version specification
 ├── lakefile.lean                                # Build configuration
